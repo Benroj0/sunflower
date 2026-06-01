@@ -40,6 +40,8 @@ pipeline {
                     withSonarQubeEnv('sonarqube') {
                         sh '''
                             mvn sonar:sonar \
+                                -Dsonar.host.url=${SONARQUBE_URL} \
+                                -Dsonar.login=${SONARQUBE_TOKEN} \
                                 -Dsonar.projectKey=ecommerce-lp2 \
                                 -Dsonar.projectName="E-commerce LP2" \
                                 -Dsonar.projectVersion=${BUILD_NUMBER} \
