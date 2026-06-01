@@ -9,11 +9,12 @@ pipeline {
         DOCKER_PROJECT_NAME = 'ecomapp'
         APP_CONTAINER_NAME = 'ecommerce_app'
         SONARQUBE_URL = 'http://sonarqube:9000'
-        SONARQUBE_TOKEN = credentials('sonarqube-token')
+        // Cambiado a 'Sonarqube' con S mayúscula para que calce idéntico con tu Jenkins
+        SONARQUBE_TOKEN = credentials('Sonarqube') 
     }
 
     stages {
-        // 📥 Etapa 1: Limpieza segura del espacio de trabajo y clonación de Git
+        // 📥 Etapa 1: Limpieza e inicio
         stage('Checkout') {
             steps {
                 cleanWs() 
@@ -21,7 +22,7 @@ pipeline {
             }
         }
 
-        // 🧪 Etapa 2: Ejecución de tus pruebas unitarias y Cucumber
+        // 🧪 Etapa 2: Pruebas unitarias y de Cucumber
         stage('Test') {
             steps {
                 echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
@@ -29,7 +30,7 @@ pipeline {
             }
         }
 
-        // 🔨 Etapa 3: Compilación y empaquetado del archivo .jar
+        // 🔨 Etapa 3: Compilación del JAR
         stage('Build') {
             steps {
                 echo '🔨 === ETAPA 3: COMPILACIÓN (BUILD) ==='
@@ -37,7 +38,7 @@ pipeline {
             }
         }
 
-        // 📊 Etapa 4: Análisis estático de código enviando métricas a SonarQube
+        // 📊 Etapa 4: Análisis de SonarQube
         stage('SonarQube Analysis') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
@@ -59,7 +60,7 @@ pipeline {
             }
         }
 
-        // 🚀 Etapa 5: Despliegue automático de contenedores (App + MySQL)
+        // 🚀 Etapa 5: Despliegue en Docker
         stage('Docker Build & Deploy') {
             steps {
                 echo '🚀 === ETAPA 5: DESPLIEGUE CON DOCKER-COMPOSE ==='
@@ -72,7 +73,7 @@ pipeline {
             }
         }
 
-        // 🏥 Etapa 6: Verificación de disponibilidad de la plataforma web
+        // 🏥 Etapa 6: Verificación de la tienda
         stage('Health Check') {
             steps {
                 echo '🏥 === ETAPA 6: VERIFICACIÓN DE SALUD (HEALTH CHECK) ==='
@@ -100,7 +101,7 @@ pipeline {
             echo '🌐 Tu app está lista en: http://localhost:8081/home'
         }
         failure {
-            echo '💥 El proceso falló en alguna etapa. Aplicando apagado preventivo...'
+            echo '💥 El proceso falló. Aplicando apagado preventivo...'
             dir('docker') {
                 sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v || true"
             }
