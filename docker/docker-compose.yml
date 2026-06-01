@@ -1,11 +1,31 @@
-version: '3.8'
-
 services:
   app:
     build:
-      context: ..  # Sube a la raíz del proyecto para buscar el JAR compilado
-      dockerfile: docker/pipeline_v1
-    container_name: api_orders_app
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ecommerce_app
     ports:
-      - '8080:8080'  # Expone el puerto 8080 de tu API
+      - '8081:8080'
     restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ecommerce_db?serverTimezone=America/Lima&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: benja
+
+  mysql:
+    image: mysql:8.0
+    container_name: ecommerce_mysql
+    ports:
+      - '3307:3306'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: benja
+      MYSQL_DATABASE: ecommerce_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

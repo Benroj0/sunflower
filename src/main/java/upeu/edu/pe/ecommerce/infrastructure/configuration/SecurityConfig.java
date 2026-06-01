@@ -7,6 +7,7 @@ package upeu.edu.pe.ecommerce.infrastructure.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,13 +22,15 @@ import upeu.edu.pe.ecommerce.infrastructure.services.loginHandler;
 public class SecurityConfig {
     
     private final UserDetailServiceImpl userDetailService;
+    private final Environment environment;
     
     @Autowired
     private loginHandler loginHandler;
     
 
-    public SecurityConfig(UserDetailServiceImpl userDetailService) {
+    public SecurityConfig(UserDetailServiceImpl userDetailService, Environment environment) {
         this.userDetailService = userDetailService;
+        this.environment = environment;
     }
      //metodo de autentificación
     @Bean
@@ -39,6 +42,12 @@ public class SecurityConfig {
     }
       @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+        boolean securityEnabled = environment.getProperty("spring.security.enabled", Boolean.class, true);
+        if (!securityEnabled) {
+            return httpSecurity.csrf(csrf -> csrf.disable())
+                    .authorizeHttpRequests(authRequest -> authRequest.anyRequest().permitAll())
+                    .build();
+        }
         return httpSecurity.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authRequest -> authRequest
                 .requestMatchers("/admin/**").hasRole("ADMIN")
