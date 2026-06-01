@@ -1,5 +1,5 @@
 pipeline {
-    agent any // Si falla aquí, cámbialo por agent { label 'tu-nodo-jenkins' }
+    agent any
 
     tools {
         maven 'MAVEN_HOME'
@@ -7,8 +7,12 @@ pipeline {
 
     environment {
         DOCKER_PROJECT_NAME = 'ecomapp'
-        // Definimos el ID de las credenciales de Sonar que creaste en Jenkins
-        SONAR_CRED_ID = 'sonarqube-token' 
+        APP_CONTAINER_NAME = 'ecommerce_app'
+        DB_CONTAINER_NAME = 'ecommerce_mysql'
+        
+        // Copiamos la estrategia de inyección explícita del profesor
+        SONARQUBE_URL = 'http://sonarqube:9000'
+        SONARQUBE_TOKEN = credentials('sonarqube-token')
     }
 
     stages {
@@ -21,21 +25,31 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo '🔨 === INICIO: BUILD ==='
-                sh 'mvn -DskipTests clean package'
+                timeout(time: 15, unit: 'MINUTES') {
+                    echo '🔨 === INICIO: BUILD ==='
+                    sh 'mvn -DskipTests clean package'
+                    echo '✅ === FIN: BUILD ==='
+                }
             }
         }
 
-        // 📊 Etapa: Análisis de calidad con SonarQube
-        stage('Sonar Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
-                    echo '📊 === INICIO: ANÁLISIS DE CALIDAD ==='
-                    // Asegúrate de que 'sonarqube' coincida con el nombre que diste en 
-                    // Jenkins > Manage Jenkins > System > SonarQube servers
+                    echo '📊 === ANÁLISIS DE CALIDAD CON SONARQUBE ==='
                     withSonarQubeEnv('sonarqube') {
-                        // Usamos la versión completa del plugin para evitar errores de contexto
-                        sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
+                        // Usamos comillas simples triples (''') para pasar las variables limpias al shell
+                        sh '''
+                            mvn sonar:sonar \
+                                -Dsonar.host.url=${SONARQUBE_URL} \
+                                -Dsonar.login=${SONARQUBE_TOKEN} \
+                                -Dsonar.projectKey=ecommerce-lp2 \
+                                -Dsonar.projectName="E-commerce LP2" \
+                                -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                -Dsonar.sources=src/main \
+                                -Dsonar.tests=src/test \
+                                -Dsonar.java.binaries=target/classes
+                        '''
                     }
                     echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
                 }
@@ -44,42 +58,60 @@ pipeline {
 
         stage('Deploy Application') {
             steps {
-                echo '🚀 === INICIO: DESPLIEGUE ==='
+                echo '🚀 === INICIO: DESPLIEGUE CON DOCKER-COMPOSE ==='
                 dir('docker') {
-                    // Limpieza forzada y estricta
-                    sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true"
-                    sh "docker system prune -f || true" // Limpieza preventiva de caché
-                    
-                    // Despliegue
-                    sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build"
+                    script {
+                        echo '1️⃣ Limpiando contenedores y volúmenes anteriores...'
+                        sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true"
+                        
+                        echo '2️⃣ Construyendo e iniciando servicios...'
+                        sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build"
+                    }
                 }
+                echo '✅ === FIN: DESPLIEGUE ==='
             }
         }
 
         stage('Health Check') {
             steps {
+                echo '🏥 === INICIO: VERIFICACIÓN DE SALUD ==='
                 script {
-                    echo '🏥 === INICIO: HEALTH CHECK ==='
-                    timeout(time: 2, unit: 'MINUTES') {
-                        waitUntil {
-                            def status = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/home", returnStdout: true).trim()
-                            return status == '200'
-                        }
-                    }
-                    echo "✅ Aplicación levantada exitosamente"
+                    sh '''
+                        sleep 10
+                        for i in {1..15}; do
+                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
+                                echo "✅ Aplicación respondiendo perfectamente en http://localhost:8081/home"
+                                exit 0
+                            fi
+                            echo "Intento $i de 15... Esperando que Spring Boot y MySQL se sincronicen"
+                            sleep 4
+                        done
+                        
+                        echo "❌ La aplicación no respondió a tiempo."
+                        echo "📋 === DIAGNÓSTICO DE CONTENEDORES ==="
+                        docker ps -a
+                        echo "📋 === LOGS DE LA APLICACIÓN ==="
+                        docker logs ecommerce_app
+                        exit 1
+                    '''
                 }
             }
         }
     }
 
     post {
+        success {
+            echo '🎉 ¡Pipeline completado con total éxito!'
+            echo "🌐 Tu app está viva en: http://localhost:8081/home"
+        }
         failure {
-            echo '💥 ✗ Pipeline falló. Limpiando...'
+            echo '💥 El pipeline falló. Ejecutando limpieza preventiva...'
             dir('docker') {
                 sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v || true"
             }
         }
         always {
+            echo '🧹 Limpiando el Workspace del agente...'
             cleanWs()
         }
     }
