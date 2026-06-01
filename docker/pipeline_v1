@@ -6,16 +6,16 @@ pipeline {
     }
 
     environment {
-        // Nombres totalmente nuevos y aislados para no interferir con la clase
+        // Nombres completamente aislados para evitar conflictos con la clase
         DOCKER_PROJECT_NAME = 'sunflowerapp'
         APP_CONTAINER_NAME = 'sunflower_web_app'
         DB_CONTAINER_NAME = 'sunflower_db_mysql'
         SONARQUBE_URL = 'http://sonarqube:9000'
-        SONARQUBE_TOKEN = credentials('Sonarqube') 
+        SONARQUBE_TOKEN = credentials('Sonarqube') //
     }
 
     stages {
-        // 📥 Etapa 1: Limpieza e inicio
+        // 📥 Etapa 1: Limpieza del espacio de trabajo y descarga desde GitHub
         stage('Checkout') {
             steps {
                 cleanWs() 
@@ -23,7 +23,7 @@ pipeline {
             }
         }
 
-        // 🧪 Etapa 2: Pruebas unitarias aisladas
+        // 🧪 Etapa 2: Pruebas unitarias de la tienda
         stage('Test') {
             steps {
                 echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
@@ -31,7 +31,7 @@ pipeline {
             }
         }
 
-        // 🔨 Etapa 3: Compilación del JAR
+        // 🔨 Etapa 3: Empaquetado del archivo ejecutable (JAR)
         stage('Build') {
             steps {
                 echo '🔨 === ETAPA 3: COMPILACIÓN (BUILD) ==='
@@ -39,7 +39,7 @@ pipeline {
             }
         }
 
-        // 📊 Etapa 4: Análisis de SonarQube
+        // 📊 Etapa 4: Inspección continua en SonarQube
         stage('SonarQube Analysis') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
@@ -55,34 +55,34 @@ pipeline {
                                 -Dsonar.sources=src/main \
                                 -Dsonar.tests=src/test \
                                 -Dsonar.java.binaries=target/classes
-                        '''
+                        ''' //
                     }
                 }
             }
         }
 
-        // 🚀 Etapa 5: Despliegue seguro y aislado en Docker
+        // 🚀 Etapa 5: Construcción y despliegue del contenedor aislado
         stage('Docker Build & Deploy') {
             steps {
                 echo '🚀 === ETAPA 5: DESPLIEGUE CON DOCKER-COMPOSE (ENTORNO SUNFLOWER) ==='
                 script {
-                    echo '🧹 Limpiando posibles residuos del contenedor Sunflower antes de actualizar...'
+                    echo '🧹 Eliminando contenedores antiguos de Sunflower para evitar colisiones...'
                     sh "docker rm -f ${APP_CONTAINER_NAME} || true"
                     sh "docker rm -f ${DB_CONTAINER_NAME} || true"
                 }
                 dir('docker') {
                     script {
-                        echo '🧹 Ejecutando down federado para el proyecto aislado...'
+                        echo '🧹 Deteniendo servicios previos del stack Sunflower...'
                         sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true"
                         
-                        echo '🏗️ Levantando el nuevo stack independiente...'
+                        echo '🏗️ Levantando el nuevo stack de forma completamente independiente...'
                         sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build"
                     }
                 }
             }
         }
 
-        // 🏥 Etapa 6: Verificación de la tienda
+        // 🏥 Etapa 6: Verificación de disponibilidad de la tienda
         stage('Health Check') {
             steps {
                 echo '🏥 === ETAPA 6: VERIFICACIÓN DE SALUD (HEALTH CHECK) ==='
@@ -103,10 +103,11 @@ pipeline {
                         done
                         echo "❌ El Health Check falló: La aplicación no respondió en el puerto 8081."
                         exit 1
-                    '''
+                    ''' //
                 }
             }
         }
+    }
 
     post {
         success {
@@ -114,7 +115,7 @@ pipeline {
             echo '🌐 Tu app está lista en: http://localhost:8081/home'
         }
         failure {
-            echo '💥 El proceso falló. Aplicando apagado preventivo...'
+            echo '💥 El proceso falló en alguna etapa. Aplicando apagado de seguridad...'
             dir('docker') {
                 sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v || true"
             }
