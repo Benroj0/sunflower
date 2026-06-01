@@ -26,25 +26,18 @@ pipeline {
             }
         }
 
+        // 📊 Etapa: Análisis de calidad con SonarQube
         stage('Sonar Analysis') {
             steps {
-                // Usamos withSonarQubeEnv para cargar la configuración del servidor
-                withSonarQubeEnv('sonarqube') {
-                    // Usamos withCredentials para el token de forma segura
-                    withCredentials([string(credentialsId: "${SONAR_CRED_ID}", variable: 'SONAR_TOKEN')]) {
-                        // IMPORTANTE: Usamos comillas triples DOBLES (""") para que la interpolación funcione
-                        sh """
-                            mvn sonar:sonar \
-                                -Dsonar.host.url=\$SONAR_HOST_URL \
-                                -Dsonar.login=${SONAR_TOKEN} \
-                                -Dsonar.projectKey=ecommerce-lp2 \
-                                -Dsonar.projectName="E-commerce LP2" \
-                                -Dsonar.projectVersion=${BUILD_NUMBER} \
-                                -Dsonar.sources=src/main \
-                                -Dsonar.tests=src/test \
-                                -Dsonar.java.binaries=target/classes
-                        """
+                timeout(time: 10, unit: 'MINUTES') {
+                    echo '📊 === INICIO: ANÁLISIS DE CALIDAD ==='
+                    // Asegúrate de que 'sonarqube' coincida con el nombre que diste en 
+                    // Jenkins > Manage Jenkins > System > SonarQube servers
+                    withSonarQubeEnv('sonarqube') {
+                        // Usamos la versión completa del plugin para evitar errores de contexto
+                        sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
                     }
+                    echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
                 }
             }
         }
