@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{admin/template_admin::head}"></head>
+<body>
+    <div th:insert="~{admin/template_admin::header}"></div>
+    <main class="container my-5">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h3 class="h4 fw-bold mb-3">Stock por producto</h3>
+            <p class="text-muted mb-4">Visualiza entradas, salidas y balance histórico por producto.</p>
+
+            <div th:each="product : ${products}" class="mb-4">
+                <h5 class="fw-semibold">[[${product.name}]]</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Descripción</th>
+                                <th>Entradas</th>
+                                <th>Salidas</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="s : ${stockMap[product.id]}">
+                                <td th:text="${s.id}">1</td>
+                                <td th:text="${s.descripcion}">Ingreso inicial</td>
+                                <td th:text="${s.entradas}">0</td>
+                                <td th:text="${s.salidas}">0</td>
+                                <td th:text="${s.balance}">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div th:insert="~{admin/template_admin::footer}"></div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"> 
+<head th:insert="~{user/template_user::head_user}"></head>
+<body>
+
+    <div th:insert="~{user/template_user::header_user}" th:if="${id==null}"></div>
+    <div th:insert="~{user/template_user::userlogged}" th:unless="${id==null}"></div>    
+
+    <main class="container my-5">
+        <div class="p-4 rounded-4 mb-5" style="background: linear-gradient(135deg, #f4efff, #f8f3ff); border: 1px solid rgba(124, 58, 237, .12); box-shadow: 0 18px 50px rgba(124, 58, 237, 0.08);">
+                <div class="row align-items-center gy-3">
+                <div class="col-lg-12">
+                    <h1 class="display-5 fw-bold">Compra natural con estilo</h1>
+                    <p class="text-muted mb-0">Encuentra tus productos favoritos.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6" th:each="product: ${products}" th:with="stockBalance=${product.stocks != null and !product.stocks.isEmpty() ? product.stocks[product.stocks.size()-1].balance : 0}">
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden product-card">
+                    <div class="position-relative" style="min-height: 150px; max-height: 210px; background: #faf7ff;">
+                        <img class="card-img-top h-100 w-100" th:src="@{/images/{img} (img = ${product.image})}" style="object-fit: contain; padding: 12px; max-height: 210px;">
+                        <span class="badge position-absolute top-0 end-0 m-3" th:classappend="${stockBalance == 0} ? ' bg-danger' : ' bg-success'" th:text="${stockBalance == 0} ? 'Agotado' : 'Disponible'">Disponible</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-2" th:text="${product.name}">Nombre del producto</h5>
+                        <p class="text-muted mb-3" th:text="${product.description}">Descripción breve</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-bold text-purple" th:text="'S/. ' + ${product.price}">S/. 0.00</span>
+                            <small class="text-muted" th:text="'Stock: ' + ${stockBalance} + ' disponibles'">0</small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-0 pb-3">
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/home/product-detail/{id} (id = ${product.id})}" class="btn btn-soft-purple flex-fill">Ver producto</a>
+                            <form th:if="${stockBalance > 0}" th:action="@{/user/cart/add-product}" method="POST" class="flex-fill js-add-to-cart">
+                                <input type="hidden" th:value="${product.id}" name="idProduct">
+                                <input type="hidden" th:value="${product.name}" name="nameProduct">
+                                <input type="hidden" th:value="${product.price}" name="price">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn btn-warning flex-fill">Añadir al carrito</button>
+                            </form>
+                            <button th:unless="${stockBalance > 0}" type="button" class="btn btn-secondary flex-fill" disabled>Agotado</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div class="mt-auto" th:insert="~{user/template_user::footer_user}"></div>
+</body>
+</html>

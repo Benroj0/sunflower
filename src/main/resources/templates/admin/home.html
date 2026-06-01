@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{admin/template_admin::head}"></head>
+<body>
+    <div th:insert="~{admin/template_admin::header}"></div>
+    <main class="container my-5">
+        <div class="p-4 rounded-4 mb-4" style="background: #ffffff; border: 1px solid rgba(124, 58, 237, .12);">
+            <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+                <div>
+                    <h1 class="h3 fw-bold text-dark">Gestión de Productos</h1>
+                    <p class="text-secondary mb-0">Resumen rápido de inventario y pedidos por producto.</p>
+                </div>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6" th:each="product: ${products}">
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="position-relative" style="min-height:150px; max-height:210px; background: #f6f3ff;">
+                        <img class="card-img-top h-100 w-100" th:src="@{/images/{img} (img = ${product.image})}" style="object-fit: contain; padding: 12px; max-height: 210px;">
+                    </div>
+                    <div class="card-body">
+                        <p class="fw-semibold mb-2" th:text="${product.name}">Nombre del producto</p>
+                        <p class="text-muted mb-3" th:text="'S/. ' + ${product.price}">S/. 0.00</p>
+                        <p class="small text-secondary" th:text="${product.description}">Descripción breve</p>
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-0 pb-3">
+                        <a th:href="@{/admin/product-orders/{id} (id=${product.id})}" class="btn btn-success w-100">Ver producto</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="bg-body-tertiary text-center mt-auto" th:insert="~{admin/template_admin::footer}"></div>
+</body>
+</html>

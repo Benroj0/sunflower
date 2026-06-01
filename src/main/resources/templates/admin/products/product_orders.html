@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/template_admin::head}"></head>
+<body class="bg-light">
+
+    <div th:replace="~{admin/template_admin::header}"></div>
+
+    <main class="container my-5">
+        <div class="row">
+            <div class="col-10 mx-auto">
+                
+                <div th:if="${product != null}" class="bg-white p-4 rounded-4 shadow-sm border border-light mb-4 d-flex align-items-center gap-4">
+                    <img th:src="@{/images/{img} (img=${product.image})}" class="rounded-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    <div>
+                        <span class="badge bg-purple text-white mb-1" style="background-color: #7c3aed;">Historial de Ventas</span>
+                        <h3 class="fw-bold m-0" style="color: #2e1065;" th:text="${product.name}">Nombre del Producto</h3>
+                        <p class="text-muted m-0" th:text="'Precio unitario: S/. ' + ${product.price}"></p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-4 shadow-sm border border-light">
+                    <h5 class="fw-bold mb-4 text-secondary">📦 Órdenes de Clientes asociadas a este producto</h5>
+                    
+                    <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5">
+                        <p class="text-muted fs-5 m-0">Aún no se han registrado compras de este producto por ningún cliente.</p>
+                    </div>
+
+                    <div th:if="${not #lists.isEmpty(orders)}" class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>N° Orden</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha</th>
+                                    <th>Cantidad</th>
+                                    <th>Total Parcial</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="orderProduct : ${orders}">
+                                    <td class="fw-bold" th:text="'#' + ${orderProduct.orderEntity != null ? orderProduct.orderEntity.id : 0}">#1</td>
+                                    <td th:text="${orderProduct.orderEntity != null && orderProduct.orderEntity.userEntity != null ? (orderProduct.orderEntity.userEntity.firstName != null ? orderProduct.orderEntity.userEntity.firstName : orderProduct.orderEntity.userEntity.username) + ' ' + (orderProduct.orderEntity.userEntity.lastName != null ? orderProduct.orderEntity.userEntity.lastName : '') : 'Cliente desconocido'}">Juan Pérez</td>
+                                    <td th:text="${orderProduct.orderEntity != null && orderProduct.orderEntity.dateCreated != null ? #temporals.format(orderProduct.orderEntity.dateCreated, 'dd/MM/yyyy HH:mm') : 'Sin fecha'}">31/05/2026</td>
+                                    <td th:text="${orderProduct.quantity}">1</td>
+                                    <td class="fw-semibold text-success" th:text="${orderProduct.totalPrice != null ? 'S/. ' + orderProduct.totalPrice : 'S/. 0.00'}">S/. 0.00</td>
+                                    <td th:text="${orderProduct.orderEntity != null && orderProduct.orderEntity.status != null ? orderProduct.orderEntity.status : 'Sin estado'}">Procesando</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4 border-top pt-3">
+                        <a th:href="@{/admin}" class="btn btn-light px-4 fw-semibold" style="border-radius: 8px;">
+                            ⬅️ Volver al Panel
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{admin/template_admin::footer}"></div>
+
+</body>
+</html>

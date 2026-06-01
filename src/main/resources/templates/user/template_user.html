@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head_user">
+    <title>Sunflower - Store</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" type="text/css"/>
+    
+    <script th:src="@{/js/bootstrap.bundle.min.js}" type="text/javascript"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(180deg, #f7f3ff 0%, #fdfcff 100%);
+            color: #3a3347;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .navbar-purple {
+            background: #ffffff !important;
+            border-bottom: 3px solid #a78bfa;
+            box-shadow: 0 4px 18px rgba(124, 58, 237, 0.08);
+        }
+        .navbar-purple .navbar-brand {
+            color: #6d28d9 !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .navbar-purple .nav-link {
+            color: #4c1d95 !important;
+            font-weight: 500;
+        }
+        .navbar-purple .nav-link:hover {
+            color: #7c3aed !important;
+        }
+        .btn-purple-outline {
+            color: #7c3aed;
+            border-color: #ddd6fe;
+            font-weight: 600;
+            background-color: #fff;
+            border-width: 2px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn-purple-outline:hover {
+            background-color: #f3e8ff;
+            color: #6d28d9;
+            border-color: #c084fc;
+        }
+        .btn-soft-purple {
+            background-color: #f3e8ff;
+            color: #4c1d95;
+            border: 2px solid rgba(124, 58, 237, 0.24);
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .btn-soft-purple:hover {
+            background-color: #e0d7ff;
+            color: #4c1d95;
+            border-color: rgba(124, 58, 237, 0.4);
+        }
+        .btn-purple-solid {
+            background-color: #7c3aed;
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn-purple-solid:hover {
+            background-color: #6d28d9;
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(109, 40, 217, 0.25);
+        }
+        .product-card {
+            background: #ffffff;
+            border: 1px solid rgba(124, 58, 237, 0.12);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 40px rgba(124, 58, 237, 0.12);
+        }
+        .product-card .btn {
+            border-radius: 12px;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        .footer-purple {
+            flex-shrink: 0;
+        }
+        .btn-cart-icon {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            padding: 0;
+            font-size: 1.1rem;
+            border-radius: 14px;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(30%, -30%);
+            background-color: #ef4444;
+            color: #ffffff;
+            border-radius: 999px;
+            min-width: 20px;
+            height: 20px;
+            font-size: 0.72rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+        }
+        .text-purple {
+            color: #7c3aed !important;
+        }
+        .bg-purple {
+            background-color: #7c3aed !important;
+        }
+        .footer-purple {
+            background-color: #4c1d95;
+            color: #f5f3ff;
+            padding: 20px 0;
+            margin-top: auto;
+            width: 100%;
+        }
+        .dropdown-menu {
+            border-radius: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3e8ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div th:fragment="userlogged">
+        <nav class="navbar navbar-expand-lg navbar-purple fixed-top py-3">
+            <div class="container">
+                <a class="navbar-brand" th:href="@{/home}">🌻 Sunflower</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navUserLogged">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navUserLogged">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" th:href="@{/home}">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/home/nosotros}">Nosotros</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/home/contacto}">Contacto</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/home/ubicacion}">Ubicación</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center gap-2">
+                        <li class="nav-item">
+                            <a class="btn btn-purple-outline btn-cart-icon position-relative" th:href="@{/user/cart/get-cart}" aria-label="Carrito">
+                                🛒
+                                <span class="cart-badge" th:text="${cartCount != null and cartCount > 0 ? cartCount : ''}" th:style="${cartCount != null and cartCount > 0 ? 'display: inline-flex' : 'display: none'}">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle btn btn-purple-outline px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" th:text="'👤 ' + (${nombre != null ? nombre : 'Usuario'})">
+                                👤 Usuario
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end mt-2">
+                                <li><a class="dropdown-item" th:href="@{/user/order/history}">📦 Mis compras</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" th:href="@{/logout}">❌ Salir</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div style="height: 85px;"></div>
+    </div>
+
+    <div th:fragment="header_user">
+        <nav class="navbar navbar-expand-lg navbar-purple fixed-top py-3">
+            <div class="container">
+                <a class="navbar-brand" th:href="@{/home}">🌻 Sunflower</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navHeaderUser">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navHeaderUser">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" th:href="@{/home}">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/home/nosotros}">Nosotros</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/home/contacto}">Contacto</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/home/ubicacion}">Ubicación</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex gap-2 align-items-center">
+                        <a class="btn btn-purple-outline btn-cart-icon position-relative" th:href="@{/user/cart/get-cart}" aria-label="Carrito">
+                            🛒
+                            <span class="cart-badge" th:text="${cartCount != null and cartCount > 0 ? cartCount : ''}" th:style="${cartCount != null and cartCount > 0 ? 'display: inline-flex' : 'display: none'}">0</span>
+                        </a>
+                        <a class="btn btn-purple-solid px-4" th:href="@{/login}">🔑 Ingresar</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div style="height: 85px;"></div>
+    </div>
+
+    <footer th:fragment="footer_user" class="footer-purple text-center mt-auto">
+        <div class="container">
+            <p class="m-0 fw-semibold">✨ "Bienvenido" ✨</p>
+            <div class="small text-white-50">&copy; SUNFLOWER</div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var forms = document.querySelectorAll('form.js-add-to-cart');
+            console.log('[CART] Formas encontradas:', forms.length);
+            
+            forms.forEach(function(form){
+                form.addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    console.log('[CART] Submit interceptado en formulario');
+                    
+                    var btn = form.querySelector('button[type="submit"]');
+                    if(btn) btn.disabled = true;
+                    var origText = btn ? btn.innerHTML : '';
+                    var action = form.getAttribute('action') || form.action;
+                    console.log('[CART] Enviando POST a:', action);
+                    
+                    var formData = new FormData(form);
+                    try{
+                        var resp = await fetch(action, {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        console.log('[CART] Response status:', resp.status);
+                        console.log('[CART] Response OK:', resp.ok);
+                        
+                        if(resp.ok){
+                            var data = await resp.json();
+                            console.log('[CART] JSON data recibida:', data);
+                            console.log('[CART] cartCount en respuesta:', data.cartCount);
+                            console.log('[CART] isNew en respuesta:', data.isNew);
+                            
+                            if(data && data.cartCount !== null && data.cartCount !== undefined){
+                                console.log('[CART] Actualizando badges a:', data.cartCount);
+                                var badges = document.querySelectorAll('.cart-badge');
+                                console.log('[CART] Badges encontrados en DOM:', badges.length);
+                                
+                                badges.forEach(function(el){ 
+                                    el.textContent = data.cartCount;
+                                    if(data.cartCount > 0) {
+                                        el.style.display = 'inline-flex';
+                                        console.log('[CART] Badge mostrado con valor:', data.cartCount);
+                                    } else {
+                                        el.style.display = 'none';
+                                        console.log('[CART] Badge ocultado (cartCount = 0)');
+                                    }
+                                });
+                            } else {
+                                console.warn('[CART] cartCount no válido en respuesta');
+                            }
+                            
+                            var msg = data.isNew ? '✓ Añadido' : '✓ Ya está en el carrito';
+                            if(btn){ btn.innerHTML = msg; }
+                            setTimeout(function(){ if(btn){ btn.innerHTML = origText; btn.disabled = false; } }, 1200);
+                        } else {
+                            if(btn){ btn.disabled = false; btn.innerHTML = origText; }
+                            console.error('[CART] Error en respuesta:', resp.status, resp.statusText);
+                            alert('No se pudo añadir al carrito.');
+                        }
+                    } catch(err){
+                        if(btn){ btn.disabled = false; btn.innerHTML = origText; }
+                        console.error('[CART] Error de red:', err.message);
+                        alert('Error de red al añadir al carrito.');
+                    }
+                });
+            });
+        });
+        </script>
+
+    </footer>
+
+</body>
+</html>

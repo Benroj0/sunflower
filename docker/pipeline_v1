@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'MAVEN_HOME'
+    }
+
+    environment {
+        IMAGE_NAME = 'api-orders-app'
+        CONTAINER_NAME = 'api-orders-container'
+    }
+
+    stages {
+        // 1. Checkout: Descarga del código
+        stage('Checkout') {
+            steps {
+                echo '📥 === ETAPA 1: CHECKOUT ==='
+                echo "Espacio de trabajo activo: ${env.WORKSPACE}"
+            }
+        }
+
+        // 2. Build & Test: Ejecución de pruebas y generación de reportes
+        stage('Build & Test') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    echo '🔨 === ETAPA 2: BUILD & TEST ==='
+                    sh 'mvn clean test'
+                }
+            }
+        }
+
+        // 3. SonarQube Analysis: Envío de métricas al servidor de Sonar
+        stage('SonarQube Analysis') {
+    steps {
+        timeout(time: 10, unit: 'MINUTES') {
+            echo '📊 === ETAPA 3: ANÁLISIS DE CALIDAD ==='
+            withSonarQubeEnv('sonarqube') { 
+                // Añadimos el parámetro -Dsonar.token directamente aquí
+                sh 'mvn sonar:sonar -Dsonar.token=squ_7667b0983b045dc942b15e4dd1c601b0a860a4e6'
+            }
+            echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
+        }
+    }
+}
+        // 4. Docker Build & Deploy: Construcción de imagen y despliegue
+        stage('Docker Build & Deploy') {
+            steps {
+                echo '🚀 === ETAPA 4: DOCKER BUILD & DEPLOY ==='
+                script {
+                    echo '1️⃣ Limpiando contenedores anteriores...'
+                    try {
+                        sh "docker stop ${CONTAINER_NAME}"
+                        sh "docker rm ${CONTAINER_NAME}"
+                    } catch (Exception e) {
+                        echo "⚠️ No se encontraron contenedores activos previos."
+                    }
+
+                    echo '2️⃣ Construyendo imagen Docker desde la raíz del proyecto...'
+                    sh "docker build -t ${IMAGE_NAME}:latest ."
+
+                    echo '3️⃣ Desplegando el contenedor en el puerto 8080...'
+                    sh "docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${IMAGE_NAME}:latest"
+                    
+                    echo '✅ ¡Despliegue finalizado!'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 ¡Pipeline completado con éxito!'
+        }
+        failure {
+            echo '💥 El pipeline falló en alguna etapa.'
+        }
+    }
+}

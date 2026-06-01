@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+    <head th:insert="~{user/template_user::head_user}"></head>
+
+    <body>
+
+        <div th:insert="~{user/template_user::header_user}" th:if="${id==null}"></div>
+        <div th:insert="~{user/template_user::userlogged}" th:unless="${id==null}"></div>
+
+        <main class="container my-5">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3 mb-4">
+                                <div>
+                                    <h2 class="h4 fw-bold">Resumen de Orden</h2>
+                                    <p class="text-muted mb-0">Verifica tu carrito y confirma tu pedido con confianza.</p>
+                                </div>
+                                <span class="badge bg-purple bg-opacity-15 text-purple">Items: <span th:text="${cart.size()}">0</span></span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="bg-light rounded-3 p-3">
+                                        <h6 class="fw-semibold mb-2">Cliente</h6>
+                                        <p class="mb-1" th:text="${user.firstName} + ' ' + ${user.lastName}">Nombre completo</p>
+                                        <p class="mb-1 text-muted" th:text="${user.email}">Correo</p>
+                                        <p class="mb-0 text-muted" th:text="${user.address}">Dirección</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="bg-light rounded-3 p-3">
+                                        <h6 class="fw-semibold mb-2">Envío</h6>
+                                        <p class="mb-0 text-muted">Los detalles de envío se usan para procesar tu pedido.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mt-4">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Precio</th>
+                                            <th>Cantidad</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="item : ${cart}">
+                                            <td th:text="${item.nameProduct}">Producto</td>
+                                            <td th:text="'S/. ' + ${item.price}">Precio</td>
+                                            <td th:text="${item.quantity}">Cant.</td>
+                                            <td th:text="'S/. ' + ${item.getTotalPriceItem()}">Total</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="fw-bold">Tu orden</h5>
+                            <ul class="list-group list-group-flush my-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Subtotal</span>
+                                    <strong th:text="'S/. ' + ${total}">S/. 0.00</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Productos</span>
+                                    <strong th:text="${cart.size()}">0</strong>
+                                </li>
+                                <li class="list-group-item">
+                                    <span class="text-muted small">El envío se calcula al momento de generar el pedido.</span>
+                                </li>
+                            </ul>
+                            <a th:if="${!cart.isEmpty()}" th:href="@{/user/order/create-order}" class="btn btn-purple-solid w-100 py-3">Generar pedido</a>
+                            <p th:if="${cart.isEmpty()}" class="text-danger text-center mt-3">No hay productos en tu orden</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div th:insert="~{user/template_user::footer_user}"></div>
+
+    </body>
+
+</html>

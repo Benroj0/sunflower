@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:insert="~{user/template_user::head_user}"></head>
+
+<body>
+
+    <div th:insert="~{user/template_user::header_user}"></div>
+
+    <main class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <h1 class="h3 fw-bold">Bienvenido de nuevo</h1>
+                            <p class="text-muted mb-0">Ingresa con tu cuenta para continuar en Sunflower.</p>
+                        </div>
+                        <form th:action="@{/login}" method="post" class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="username">Email</label>
+                                <input type="email" class="form-control form-control-lg" id="username" name="username" placeholder="email@example.com" required autocomplete="off">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="password">Contraseña</label>
+                                <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="Ingresa tu contraseña" required>
+                            </div>
+                            <div class="col-12 d-grid">
+                                <button type="submit" class="btn btn-purple-solid btn-lg">Ingresar</button>
+                            </div>
+                        </form>
+                        <div class="text-center mt-4">
+                            <span class="text-muted">¿Aún no tienes cuenta?</span>
+                            <a th:href="@{/register}" class="link-primary">Regístrate aquí</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:insert="~{user/template_user::footer_user}"></div>
+
+</body>
+
+</html>

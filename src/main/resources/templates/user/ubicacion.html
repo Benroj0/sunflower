@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:insert="~{user/template_user::head_user}"></head>
+
+<body>
+
+    <div th:insert="~{user/template_user::header_user}" th:if="${id==null}"></div>
+    <div th:insert="~{user/template_user::userlogged}" th:unless="${id==null}"></div>
+
+    <main class="container my-5">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h1 class="h3 fw-bold mb-3">Ubicación</h1>
+            <p class="text-muted mb-4">Nuestra tienda online opera desde Tarapoto, Perú. Aquí tienes la información de ubicación para envíos y atención.</p>
+            <div class="row g-4">
+                <div class="col-md-12">
+                    <div class="p-4 bg-white rounded-4 border">
+                        <h5 class="fw-semibold">Dirección</h5>
+                        <p class="text-muted mb-2">Av. Naturaleza 123, Tarapoto, Lima</p>
+                        <p class="text-muted mb-0">Envíos a todo el país</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:insert="~{user/template_user::footer_user}"></div>
+
+</body>
+
+</html>

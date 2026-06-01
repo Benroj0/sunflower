@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:insert="~{user/template_user::head_user}"></head>
+
+<body>
+
+    <div th:insert="~{user/template_user::header_user}" th:if="${id==null}"></div>
+    <div th:insert="~{user/template_user::userlogged}" th:unless="${id==null}"></div>
+
+    <main class="container my-5">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h1 class="h3 fw-bold mb-3">Nosotros</h1>
+            <p class="text-muted mb-4">Sunflower nació para ofrecer una experiencia de compra natural, moderna y agradable. Aquí encontrarás productos seleccionados con cuidado, precios claros y stock actualizado.</p>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="p-4 bg-light rounded-4 border">
+                        <h5 class="fw-semibold">Nuestra misión</h5>
+                        <p class="text-muted mb-0">Crear un ecommerce con productos que inspiran confianza, calidad y practicidad para tus compras diarias.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-4 bg-light rounded-4 border">
+                        <h5 class="fw-semibold">Nuestra visión</h5>
+                        <p class="text-muted mb-0">Ser un sitio sencillo, moderno y transparente donde el usuario siempre encuentre lo que necesita.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:insert="~{user/template_user::footer_user}"></div>
+
+</body>
+
+</html>
