@@ -6,10 +6,11 @@ pipeline {
     }
 
     environment {
-        DOCKER_PROJECT_NAME = 'ecomapp'
-        APP_CONTAINER_NAME = 'ecommerce_app'
+        // Nombres totalmente nuevos y aislados para no interferir con la clase
+        DOCKER_PROJECT_NAME = 'sunflowerapp'
+        APP_CONTAINER_NAME = 'sunflower_web_app'
+        DB_CONTAINER_NAME = 'sunflower_db_mysql'
         SONARQUBE_URL = 'http://sonarqube:9000'
-        // Cambiado a 'Sonarqube' con S mayúscula para que calce idéntico con tu Jenkins
         SONARQUBE_TOKEN = credentials('Sonarqube') 
     }
 
@@ -22,11 +23,10 @@ pipeline {
             }
         }
 
-        // 🧪 Etapa 2: Pruebas unitarias y de Cucumber
+        // 🧪 Etapa 2: Pruebas unitarias aisladas
         stage('Test') {
             steps {
                 echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
-                // Forzamos a que solo corra el test unitario aislado
                 sh 'mvn test -Dtest=CartServicesTest'
             }
         }
@@ -61,13 +61,21 @@ pipeline {
             }
         }
 
-        // 🚀 Etapa 5: Despliegue en Docker
+        // 🚀 Etapa 5: Despliegue seguro y aislado en Docker
         stage('Docker Build & Deploy') {
             steps {
-                echo '🚀 === ETAPA 5: DESPLIEGUE CON DOCKER-COMPOSE ==='
+                echo '🚀 === ETAPA 5: DESPLIEGUE CON DOCKER-COMPOSE (ENTORNO SUNFLOWER) ==='
+                script {
+                    echo '🧹 Limpiando posibles residuos del contenedor Sunflower antes de actualizar...'
+                    sh "docker rm -f ${APP_CONTAINER_NAME} || true"
+                    sh "docker rm -f ${DB_CONTAINER_NAME} || true"
+                }
                 dir('docker') {
                     script {
+                        echo '🧹 Ejecutando down federado para el proyecto aislado...'
                         sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true"
+                        
+                        echo '🏗️ Levantando el nuevo stack independiente...'
                         sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build"
                     }
                 }
@@ -83,7 +91,7 @@ pipeline {
                         sleep 15
                         for i in {1..15}; do
                             if curl -f http://localhost:8081/home > /dev/null 2>&1; then
-                                echo "✅ ¡Perfecto! La tienda Sunflower está respondiendo con éxito."
+                                echo "✅ ¡Excelente! La tienda Sunflower está respondiendo con éxito."
                                 exit 0
                             fi
                             echo "Intento $i de 15... Esperando que el servidor Spring Boot inicie"
@@ -98,7 +106,7 @@ pipeline {
 
     post {
         success {
-            echo '🎉 ¡Todo el pipeline de CI/CD ha finalizado con éxito!'
+            echo '🎉 ¡TODO EL PIPELINE DE CI/CD HA COMPLETADO CON ÉXITO!'
             echo '🌐 Tu app está lista en: http://localhost:8081/home'
         }
         failure {
