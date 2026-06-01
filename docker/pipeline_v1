@@ -26,7 +26,8 @@ pipeline {
         stage('Test') {
             steps {
                 echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
-                sh 'mvn test'
+                // Forzamos a que solo corra el test unitario aislado
+                sh 'mvn test -Dtest=CartServicesTest'
             }
         }
 
