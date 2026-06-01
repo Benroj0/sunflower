@@ -37,7 +37,15 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo '📊 === INICIO: SONAR ANALYSIS ==='
                     withSonarQubeEnv('sonarqube') {
-                        sh 'mvn sonar:sonar -Dsonar.host.url=${SONARQUBE_URL} -Dsonar.login=${SONARQUBE_TOKEN} -Dsonar.projectKey=ecommerce-lp2 -Dsonar.projectName="E-commerce LP2" -Dsonar.projectVersion=${BUILD_NUMBER} -Dsonar.sources=src/main -Dsonar.tests=src/test -Dsonar.java.binaries=target/classes'
+                        sh '''
+                            mvn sonar:sonar \                                -Dsonar.host.url=${SONARQUBE_URL} \
+                                -Dsonar.login=${SONARQUBE_TOKEN} \                                -Dsonar.projectKey=ecommerce-lp2 \
+                                -Dsonar.projectName="E-commerce LP2" \
+                                -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                -Dsonar.sources=src/main \
+                                -Dsonar.tests=src/test \
+                                -Dsonar.java.binaries=target/classes
+                        '''
                     }
                     echo '✅ === FIN: SONAR ANALYSIS ==='
                 }
@@ -53,8 +61,6 @@ pipeline {
                         sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true"
 
                         echo '2️⃣ Construyendo e iniciando servicios...'
-                        sh "docker rm -f ${DB_CONTAINER_NAME} || true"
-                        sh "docker rm -f ${APP_CONTAINER_NAME} || true"
                         sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build"
                     }
                 }
