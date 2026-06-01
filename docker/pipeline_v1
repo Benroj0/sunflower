@@ -37,15 +37,7 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo '📊 === INICIO: SONAR ANALYSIS ==='
                     withSonarQubeEnv('sonarqube') {
-                        sh '''
-                            mvn sonar:sonar \                                -Dsonar.host.url=${SONARQUBE_URL} \
-                                -Dsonar.login=${SONARQUBE_TOKEN} \                                -Dsonar.projectKey=ecommerce-lp2 \
-                                -Dsonar.projectName="E-commerce LP2" \
-                                -Dsonar.projectVersion=${BUILD_NUMBER} \
-                                -Dsonar.sources=src/main \
-                                -Dsonar.tests=src/test \
-                                -Dsonar.java.binaries=target/classes
-                        '''
+                        sh 'mvn sonar:sonar -Dsonar.host.url=${SONARQUBE_URL} -Dsonar.login=${SONARQUBE_TOKEN} -Dsonar.projectKey=ecommerce-lp2 -Dsonar.projectName="E-commerce LP2" -Dsonar.projectVersion=${BUILD_NUMBER} -Dsonar.sources=src/main -Dsonar.tests=src/test -Dsonar.java.binaries=target/classes'
                     }
                     echo '✅ === FIN: SONAR ANALYSIS ==='
                 }
