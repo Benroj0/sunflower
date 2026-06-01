@@ -1,121 +1,70 @@
-pipeline {
-    agent any
-
-    tools {
-        maven 'MAVEN_HOME'
+node {
+    stage('Checkout') {
+        checkout scm
     }
 
-    environment {
-        IMAGE_NAME = 'ecommerce-app'
-        CONTAINER_NAME = 'ecommerce-container'
-        SONARQUBE_URL = 'http://sonarqube:9000'
-        SONARQUBE_TOKEN = credentials('sonarqube-token')
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                echo '📥 === ETAPA 1: CHECKOUT ==='
-                checkout scm
-            }
-        }
-
+    try {
         stage('Build & Test') {
-            steps {
-                timeout(time: 15, unit: 'MINUTES') {
-                    echo '🔨 === ETAPA 2: BUILD & TEST ==='
-                    sh 'mvn clean package -DskipTests'
-                }
+            timeout(time: 15, unit: 'MINUTES') {
+                echo '🔨 === ETAPA 2: BUILD & TEST ==='
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    echo '📊 === ETAPA 3: ANÁLISIS DE CALIDAD CON SONARQUBE ==='
-                    withSonarQubeEnv('sonarqube') {
-                        sh '''
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=ecommerce-lp2 \
-                                -Dsonar.projectName="E-commerce LP2" \
-                                -Dsonar.projectVersion=${BUILD_NUMBER} \
-                                -Dsonar.sources=src/main \
-                                -Dsonar.tests=src/test \
-                                -Dsonar.java.binaries=target/classes
-                        '''
-                    }
-                    echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
+            timeout(time: 10, unit: 'MINUTES') {
+                echo '📊 === ETAPA 3: ANÁLISIS DE CALIDAD CON SONARQUBE ==='
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=ecommerce-lp2 \
+                            -Dsonar.projectName="E-commerce LP2" \
+                            -Dsonar.projectVersion=${BUILD_NUMBER} \
+                            -Dsonar.sources=src/main \
+                            -Dsonar.tests=src/test \
+                            -Dsonar.java.binaries=target/classes
+                    '''
                 }
+                echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
             }
         }
 
         stage('Docker Build & Deploy') {
-            steps {
-                echo '🚀 === ETAPA 4: DOCKER BUILD & DEPLOY ==='
-                script {
-                    echo '1️⃣ Limpiando stack anterior...'
-                    sh '''
-                        cd docker
-                        docker-compose down -v 2>/dev/null || true
-                        cd ..
-                    '''
-
-                    echo '2️⃣ Construyendo e iniciando servicios con docker-compose...'
-                    sh '''
-                        cd docker
-                        docker-compose up -d --build
-                        cd ..
-                    '''
-                    echo '✅ ¡Stack de Docker iniciado con app + MySQL!'
-                }
+            echo '🚀 === ETAPA 4: DOCKER BUILD & DEPLOY ==='
+            echo '1️⃣ Limpiando stack anterior...'
+            dir('docker') {
+                sh 'docker-compose down -v || true'
+                sh 'docker-compose up -d --build'
             }
+            echo '✅ ¡Stack de Docker iniciado con app + MySQL!'
         }
 
         stage('Health Check') {
-            steps {
-                echo '🏥 === ETAPA 5: VERIFICACIÓN DE SALUD ==='
-                script {
-                    sleep(time: 10, unit: 'SECONDS')
-                    sh '''
-                        for i in {1..15}; do
-                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
-                                echo "✅ Aplicación respondiendo en puerto 8081"
-                                exit 0
-                            fi
-                            echo "Intento $i de 15... esperando que MySQL esté listo"
-                            sleep 3
-                        done
-                        echo "❌ La aplicación no responde después de 15 intentos"
-                        docker ps -a
-                        cd docker && docker-compose logs && cd ..
-                        exit 1
-                    '''
-                }
-            }
+            echo '🏥 === ETAPA 5: VERIFICACIÓN DE SALUD ==='
+            sleep time: 10, unit: 'SECONDS'
+            sh '''
+                for i in {1..15}; do
+                    if curl -f http://localhost:8081/home > /dev/null 2>&1; then
+                        echo "✅ Aplicación respondiendo en puerto 8081"
+                        exit 0
+                    fi
+                    echo "Intento $i de 15... esperando que MySQL esté listo"
+                    sleep 3
+                done
+                echo "❌ La aplicación no responde después de 15 intentos"
+                docker ps -a
+                cd docker && docker-compose logs && cd ..
+                exit 1
+            '''
         }
-    }
-
-    post {
-        success {
-            echo '🎉 ¡Pipeline completado con éxito!'
-            echo "📦 Imagen creada: ${IMAGE_NAME}:latest"
-            echo "🌐 Aplicación disponible en: http://localhost:8081"
-            echo "📊 Reportes SonarQube: ${SONARQUBE_URL}"
-        }
-        failure {
-            echo '💥 El pipeline falló en alguna etapa.'
-            script {
-                sh '''
-                    cd docker
-                    docker-compose logs || true
-                    docker-compose down -v || true
-                    cd ..
-                '''
-            }
-        }
-        always {
-            echo '🧹 Limpieza de archivos temporales...'
-            cleanWs()
+    } catch (err) {
+        currentBuild.result = 'FAILURE'
+        throw err
+    } finally {
+        echo '💥 Finalizando y limpiando...'
+        dir('docker') {
+            sh 'docker-compose logs || true'
+            sh 'docker-compose down -v || true'
         }
     }
 }
