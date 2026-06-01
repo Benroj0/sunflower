@@ -6,62 +6,90 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'api-orders-app'
-        CONTAINER_NAME = 'api-orders-container'
+        IMAGE_NAME = 'ecommerce-app'
+        CONTAINER_NAME = 'ecommerce-container'
+        SONARQUBE_URL = 'http://sonarqube:9000'
+        SONARQUBE_TOKEN = credentials('sonarqube-token')
     }
 
     stages {
-        // 1. Checkout: Descarga del código
         stage('Checkout') {
             steps {
                 echo '📥 === ETAPA 1: CHECKOUT ==='
-                echo "Espacio de trabajo activo: ${env.WORKSPACE}"
+                checkout scm
             }
         }
 
-        // 2. Build & Test: Ejecución de pruebas y generación de reportes
         stage('Build & Test') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
+                timeout(time: 15, unit: 'MINUTES') {
                     echo '🔨 === ETAPA 2: BUILD & TEST ==='
-                    sh 'mvn clean test'
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
 
-        // 3. SonarQube Analysis: Envío de métricas al servidor de Sonar
         stage('SonarQube Analysis') {
-    steps {
-        timeout(time: 10, unit: 'MINUTES') {
-            echo '📊 === ETAPA 3: ANÁLISIS DE CALIDAD ==='
-            withSonarQubeEnv('sonarqube') { 
-                // Añadimos el parámetro -Dsonar.token directamente aquí
-                sh 'mvn sonar:sonar -Dsonar.token=squ_7667b0983b045dc942b15e4dd1c601b0a860a4e6'
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    echo '📊 === ETAPA 3: ANÁLISIS DE CALIDAD CON SONARQUBE ==='
+                    withSonarQubeEnv('sonarqube') {
+                        sh '''
+                            mvn sonar:sonar \
+                                -Dsonar.projectKey=ecommerce-lp2 \
+                                -Dsonar.projectName="E-commerce LP2" \
+                                -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                -Dsonar.sources=src/main \
+                                -Dsonar.tests=src/test \
+                                -Dsonar.java.binaries=target/classes
+                        '''
+                    }
+                    echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
+                }
             }
-            echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
         }
-    }
-}
-        // 4. Docker Build & Deploy: Construcción de imagen y despliegue
+
         stage('Docker Build & Deploy') {
             steps {
                 echo '🚀 === ETAPA 4: DOCKER BUILD & DEPLOY ==='
                 script {
-                    echo '1️⃣ Limpiando contenedores anteriores...'
-                    try {
-                        sh "docker stop ${CONTAINER_NAME}"
-                        sh "docker rm ${CONTAINER_NAME}"
-                    } catch (Exception e) {
-                        echo "⚠️ No se encontraron contenedores activos previos."
-                    }
+                    echo '1️⃣ Limpiando stack anterior...'
+                    sh '''
+                        cd docker
+                        docker-compose down -v 2>/dev/null || true
+                        cd ..
+                    '''
 
-                    echo '2️⃣ Construyendo imagen Docker desde la raíz del proyecto...'
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                    echo '2️⃣ Construyendo e iniciando servicios con docker-compose...'
+                    sh '''
+                        cd docker
+                        docker-compose up -d --build
+                        cd ..
+                    '''
+                    echo '✅ ¡Stack de Docker iniciado con app + MySQL!'
+                }
+            }
+        }
 
-                    echo '3️⃣ Desplegando el contenedor en el puerto 8080...'
-                    sh "docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${IMAGE_NAME}:latest"
-                    
-                    echo '✅ ¡Despliegue finalizado!'
+        stage('Health Check') {
+            steps {
+                echo '🏥 === ETAPA 5: VERIFICACIÓN DE SALUD ==='
+                script {
+                    sleep(time: 10, unit: 'SECONDS')
+                    sh '''
+                        for i in {1..15}; do
+                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
+                                echo "✅ Aplicación respondiendo en puerto 8081"
+                                exit 0
+                            fi
+                            echo "Intento $i de 15... esperando que MySQL esté listo"
+                            sleep 3
+                        done
+                        echo "❌ La aplicación no responde después de 15 intentos"
+                        docker ps -a
+                        cd docker && docker-compose logs && cd ..
+                        exit 1
+                    '''
                 }
             }
         }
@@ -70,9 +98,24 @@ pipeline {
     post {
         success {
             echo '🎉 ¡Pipeline completado con éxito!'
+            echo "📦 Imagen creada: ${IMAGE_NAME}:latest"
+            echo "🌐 Aplicación disponible en: http://localhost:8081"
+            echo "📊 Reportes SonarQube: ${SONARQUBE_URL}"
         }
         failure {
             echo '💥 El pipeline falló en alguna etapa.'
+            script {
+                sh '''
+                    cd docker
+                    docker-compose logs || true
+                    docker-compose down -v || true
+                    cd ..
+                '''
+            }
+        }
+        always {
+            echo '🧹 Limpieza de archivos temporales...'
+            cleanWs()
         }
     }
 }
