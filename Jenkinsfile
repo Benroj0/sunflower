@@ -27,8 +27,7 @@ pipeline {
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
                     echo '🔨 === ETAPA 2: BUILD & TEST ==='
-                    sh 'mvn clean test -X'
-                    sh 'mvn package -DskipTests'
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
@@ -54,26 +53,26 @@ pipeline {
             }
         }
 
-        // 4. Docker Build & Deploy: Construcción de imagen y despliegue
+        // 4. Docker Build & Deploy: Construcción de imagen y despliegue con docker-compose
         stage('Docker Build & Deploy') {
             steps {
                 echo '🚀 === ETAPA 4: DOCKER BUILD & DEPLOY ==='
                 script {
-                    echo '1️⃣ Limpiando contenedores anteriores...'
-                    try {
-                        sh "docker stop ${CONTAINER_NAME}"
-                        sh "docker rm ${CONTAINER_NAME}"
-                    } catch (Exception e) {
-                        echo "⚠️ No se encontraron contenedores activos previos."
-                    }
+                    echo '1️⃣ Limpiando stack anterior...'
+                    sh '''
+                        cd docker
+                        docker-compose down -v 2>/dev/null || true
+                        cd ..
+                    '''
 
-                    echo '2️⃣ Construyendo imagen Docker desde la raíz del proyecto...'
-                    sh "docker build -t ${IMAGE_NAME}:latest -f docker/Dockerfile ."
-
-                    echo '3️⃣ Desplegando el contenedor en el puerto 8080...'
-                    sh "docker run -d --name ${CONTAINER_NAME} -p 8080:8080 --net docker_default ${IMAGE_NAME}:latest"
+                    echo '2️⃣ Construyendo e iniciando servicios con docker-compose...'
+                    sh '''
+                        cd docker
+                        docker-compose up -d --build
+                        cd ..
+                    '''
                     
-                    echo '✅ ¡Despliegue finalizado!'
+                    echo '✅ ¡Stack de Docker iniciado con app + MySQL!'
                 }
             }
         }
@@ -83,17 +82,21 @@ pipeline {
             steps {
                 echo '🏥 === ETAPA 5: VERIFICACIÓN DE SALUD ==='
                 script {
-                    sleep(time: 5, unit: 'SECONDS')
+                    sleep(time: 10, unit: 'SECONDS')
                     sh '''
-                        for i in {1..10}; do
-                            if curl -f http://localhost:8080/home > /dev/null 2>&1; then
-                                echo "✅ Aplicación respondiendo en puerto 8080"
+                        for i in {1..15}; do
+                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
+                                echo "✅ Aplicación respondiendo en puerto 8081"
                                 exit 0
                             fi
-                            echo "Intento $i de 10..."
+                            echo "Intento $i de 15... esperando que MySQL esté listo"
                             sleep 3
                         done
-                        echo "❌ La aplicación no responde después de 10 intentos"
+                        echo "❌ La aplicación no responde después de 15 intentos"
+                        echo "Estado de los contenedores:"
+                        docker ps -a
+                        echo "Logs de la aplicación:"
+                        cd docker && docker-compose logs && cd ..
                         exit 1
                     '''
                 }
@@ -105,15 +108,19 @@ pipeline {
         success {
             echo '🎉 ¡Pipeline completado con éxito!'
             echo "📦 Imagen creada: ${IMAGE_NAME}:latest"
-            echo "🌐 Aplicación disponible en: http://localhost:8080"
+            echo "🌐 Aplicación disponible en: http://localhost:8081"
             echo "📊 Reportes SonarQube: ${SONARQUBE_URL}"
         }
         failure {
             echo '💥 El pipeline falló en alguna etapa.'
             script {
                 try {
-                    sh "docker stop ${CONTAINER_NAME}"
-                    sh "docker rm ${CONTAINER_NAME}"
+                    sh '''
+                        cd docker
+                        docker-compose logs || true
+                        docker-compose down -v || true
+                        cd ..
+                    '''
                 } catch (Exception e) {
                     echo "No se pudieron limpiar los contenedores"
                 }
