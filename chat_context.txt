@@ -1,0 +1,36 @@
+Contexto del chat:
+
+- Proyecto: ecommerce_lp2_2024
+- Objetivo: desplegar una app Spring Boot con Docker y Jenkins + MySQL.
+- Problemas resueltos:
+  - Docker Compose y .dockerignore para copiar el JAR correctamente.
+  - Configuración de puerto: host 8081 -> contenedor 8080.
+  - MySQL Connector con allowPublicKeyRetrieval=true.
+  - Redirección de raiz / a /home en Spring Boot.
+  - Pipeline Jenkins: saltar pruebas en CI con -DskipTests.
+  - Error de Jenkins: MissingContextVariableException por sh fuera de node.
+  - Error de Sonar: no alcanzaba SonarQube en docker.sonar.
+
+- Archivos principales modificados:
+  - Dockerfile
+  - docker/docker-compose.yml
+  - Jenkinsfile
+  - docker/pipeline_v1
+  - src/main/resources/application.properties
+  - src/main/java/upeu/edu/pe/ecommerce/infrastructure/controller/RootController.java
+
+- Reglas del usuario:
+  - El proyecto usa MySQL directo, no H2.
+  - No crear otro token de Sonar si la instancia ya existe.
+  - El pipeline debe usar docker-compose y node en Jenkins.
+  - El despliegue debe limpiar contenedores anteriores y manejar nombres en conflicto.
+
+- Estado actual:
+  - `docker/pipeline_v1` es el pipeline en uso.
+  - Se debe garantizar que Jenkins apunte a este script.
+  - Se debe eliminar contenedores previos con nombre fijo antes de `docker-compose up`.
+
+Notas para futuros chats:
+- Si falla `docker-compose up` por conflicto de nombre, usar `docker rm -f <container>`.
+- Si falla Sonar, verificar host accesible desde Jenkins y usar `-Dsonar.host.url`.
+- Si falla `sh` en Jenkins, asegurar `node {}` y `dir(...)`.
