@@ -93,8 +93,8 @@ pipeline {
                         
                         COUNTER=1
                         while [ $COUNTER -le 15 ]; do
-                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
-                                echo "✅ ¡Excelente! La tienda Sunflower está respondiendo con éxito."
+                            if curl -f http://host.docker.internal:8081/home > /dev/null 2>&1; then
+                                echo "✅ ¡Excelente! La tienda Sunflower está respondiendo con éxito hacia el exterior."
                                 exit 0
                             fi
                             echo "Intento $COUNTER de 15... La app aún está cargando, reintentando en 5 segundos..."
@@ -112,7 +112,7 @@ pipeline {
     post {
         success {
             echo '🎉 ¡TODO EL PIPELINE DE CI/CD HA COMPLETADO CON ÉXITO!'
-            echo '🌐 Tu app está lista en: http://localhost:8081/home'
+            echo '🌐 Tu app está lista y disponible en: http://localhost:8081/home'
         }
         failure {
             echo '💥 El proceso falló en alguna etapa. Aplicando apagado de seguridad...'
