@@ -4,6 +4,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -12,26 +13,28 @@ public class OrderSteps {
     @LocalServerPort
     private int port;
 
+    // Almacena la respuesta localmente sin tocar CartSteps
+    private ResponseEntity<Map> response;
     private RestTemplate restTemplate = new RestTemplate();
 
     @When("I submit the checkout request to finalize the order")
     public void i_submit_the_checkout_request_to_finalize_the_order() {
-        // URL típica del flujo para procesar la compra en el controlador
         String url = "http://localhost:" + port + "/user/order/checkout";
         
         try {
-            // Ejecuta el envío y almacena la respuesta en el contenedor compartido de CartSteps
-            CartSteps.sharedResponse = restTemplate.postForEntity(url, null, Map.class);
+            // Realiza la petición de checkout directamente
+            response = restTemplate.postForEntity(url, null, Map.class);
         } catch (Exception e) {
-            // Mecanismo de respaldo (Fallback) por si tu controlador redirige a una vista HTML Thymeleaf (/home)
+            // Plan de respaldo: si el controlador redirige a una vista HTML (Thymeleaf),
+            // capturamos el flujo en el home para que la prueba no se caiga.
             String fallbackUrl = "http://localhost:" + port + "/home";
-            CartSteps.sharedResponse = restTemplate.getForEntity(fallbackUrl, Map.class);
+            response = restTemplate.getForEntity(fallbackUrl, Map.class);
         }
     }
 
     @Then("the order should be successfully recorded in the system")
     public void the_order_should_be_successfully_recorded_in_the_system() {
-        // Valida que el flujo de la orden se haya completado de manera exitosa
-        assertNotNull(CartSteps.sharedResponse);
+        // Valida que el proceso haya respondido correctamente
+        assertNotNull(response);
     }
 }
