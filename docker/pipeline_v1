@@ -11,7 +11,7 @@ pipeline {
         APP_CONTAINER_NAME = 'sunflower_web_app'
         DB_CONTAINER_NAME = 'sunflower_db_mysql'
         SONARQUBE_URL = 'http://sonarqube:9000'
-        SONARQUBE_TOKEN = credentials('Sonarqube') //
+        SONARQUBE_TOKEN = credentials('Sonarqube')
     }
 
     stages {
@@ -23,11 +23,11 @@ pipeline {
             }
         }
 
-        // 🧪 Etapa 2: Pruebas unitarias de la tienda
+        // 🧪 Etapa 2: Pruebas automatizadas de la tienda (Unitarias y BDD)
         stage('Test') {
             steps {
                 echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
-                sh 'mvn test -Dtest=CartServicesTest'
+                sh 'mvn test'
             }
         }
 
@@ -55,7 +55,7 @@ pipeline {
                                 -Dsonar.sources=src/main \
                                 -Dsonar.tests=src/test \
                                 -Dsonar.java.binaries=target/classes
-                        ''' //
+                        '''
                     }
                 }
             }
@@ -103,7 +103,7 @@ pipeline {
                         done
                         echo "❌ El Health Check falló: La aplicación no respondió en el puerto 8081."
                         exit 1
-                    ''' //
+                    '''
                 }
             }
         }
