@@ -1,6 +1,9 @@
 package upeu.edu.pe.ecommerce.infrastructure.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -29,9 +32,11 @@ public class OrderControllerTest {
 
     @Test
     void testShowSumaryOrder() {
-        // GIVEN
+        // GIVEN: Configuramos qué debe responder la sesión cuando se le pregunte por "iduser"
         when(httpSession.getAttribute("iduser")).thenReturn("1");
-        when(userService.findById(1)).thenReturn(new UserEntity());
+        when(httpSession.getAttribute("name")).thenReturn("UsuarioTest"); // ¡IMPORTANTE! Agrega esta línea también
+        
+        when(userService.findById(anyInt())).thenReturn(new UserEntity());
         when(cartServices.getItemCarts()).thenReturn(new ArrayList<>());
         when(cartServices.getTotalCart()).thenReturn(BigDecimal.ZERO);
 
