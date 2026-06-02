@@ -8,3 +8,4 @@ Feature: Flujo Completo de Pedidos en la Tienda Sunflower
     And I submit the checkout request to finalize the order
     Then the response status should be 200
     And the order should be successfully recorded in the system
+    

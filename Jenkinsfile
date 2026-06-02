@@ -6,37 +6,53 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'ecommerce-app'
-        CONTAINER_NAME = 'ecommerce-container'
+        DOCKER_PROJECT_NAME = 'sunflowerapp'
+        APP_CONTAINER_NAME = 'sunflower_web_app'
+        DB_CONTAINER_NAME = 'sunflower_db_mysql'
         SONARQUBE_URL = 'http://sonarqube:9000'
-        SONARQUBE_TOKEN = credentials('sonarqube-token')
+        SONARQUBE_TOKEN = credentials('Sonarqube')
     }
 
     stages {
-        // 1. Checkout: Descarga del código
         stage('Checkout') {
             steps {
-                echo '📥 === ETAPA 1: CHECKOUT ==='
-                echo "Workspace: ${env.WORKSPACE}"
+                cleanWs() 
                 checkout scm
             }
         }
 
-        // 2. Build & Test: Ejecución de pruebas y generación de reportes
-        stage('Build & Test') {
+        stage('Build JAR') {
             steps {
-                timeout(time: 15, unit: 'MINUTES') {
-                    echo '🔨 === ETAPA 2: BUILD & TEST ==='
-                    sh 'mvn clean package -DskipTests'
+                echo '🔨 === COMPILANDO ARCHIVO JAR ==='
+                sh 'mvn package -DskipTests'
+            }
+        }
+
+        // 🗄️ Levantamos MySQL antes de los tests para que Cucumber no falle
+        stage('Start Test Database') {
+            steps {
+                echo '🗄️ === INICIANDO MYSQL PARA PRUEBAS ==='
+                dir('docker') {
+                    // Levanta solo el contenedor de la base de datos
+                    sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d ${DB_CONTAINER_NAME} || true"
+                    echo '⏳ Esperando 15 segundos a que MySQL acepte conexiones...'
+                    sleep 15
                 }
             }
         }
 
-        // 3. SonarQube Analysis: Envío de métricas al servidor de Sonar
+        // 🧪 Corre todas las pruebas (Unitarias con Mockito + Integración con Cucumber)
+        stage('Test') {
+            steps {
+                echo '🧪 === EJECUTANDO TODAS LAS PRUEBAS (CUCUMBER Y UNITARIAS) ==='
+                sh 'mvn test'
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
-                    echo '📊 === ETAPA 3: ANÁLISIS DE CALIDAD CON SONARQUBE ==='
+                    echo '📊 === ANÁLISIS EN SONARQUBE ==='
                     withSonarQubeEnv('sonarqube') {
                         sh '''
                             mvn sonar:sonar \
@@ -50,55 +66,40 @@ pipeline {
                                 -Dsonar.java.binaries=target/classes
                         '''
                     }
-                    echo '✅ === FIN: ANÁLISIS DE CALIDAD COMPLETADO ==='
                 }
             }
         }
 
-        // 4. Docker Build & Deploy: Construcción de imagen y despliegue con docker-compose
-        stage('Docker Build & Deploy') {
+        // 🚀 El despliegue de la aplicación web queda al final
+        stage('Docker Final Deploy') {
             steps {
-                echo '🚀 === ETAPA 4: DOCKER BUILD & DEPLOY ==='
+                echo '🚀 === DESPLIEGUE FINAL DE LA APLICACIÓN WEB ==='
                 script {
-                    echo '1️⃣ Limpiando stack anterior...'
-                    sh '''
-                        cd docker
-                        docker-compose down -v 2>/dev/null || true
-                        cd ..
-                    '''
-
-                    echo '2️⃣ Construyendo e iniciando servicios con docker-compose...'
-                    sh '''
-                        cd docker
-                        docker-compose up -d --build
-                        cd ..
-                    '''
-                    
-                    echo '✅ ¡Stack de Docker iniciado con app + MySQL!'
+                    sh "docker rm -f ${APP_CONTAINER_NAME} || true"
+                }
+                dir('docker') {
+                    sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build"
                 }
             }
         }
 
-        // 5. Health Check: Verificación de que la aplicación está activa
         stage('Health Check') {
             steps {
-                echo '🏥 === ETAPA 5: VERIFICACIÓN DE SALUD ==='
+                echo '🏥 === VERIFICANDO DISPONIBILIDAD DE LA APP ==='
                 script {
-                    sleep(time: 10, unit: 'SECONDS')
                     sh '''
-                        for i in {1..15}; do
-                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
-                                echo "✅ Aplicación respondiendo en puerto 8081"
+                        echo "⏳ Esperando arranque interno de Spring Boot..."
+                        sleep 20
+                        COUNTER=1
+                        while [ $COUNTER -le 15 ]; do
+                            if curl -f http://host.docker.internal:8081/home > /dev/null 2>&1; then
+                                echo "✅ ¡La app Sunflower está respondiendo con éxito!"
                                 exit 0
                             fi
-                            echo "Intento $i de 15... esperando que MySQL esté listo"
-                            sleep 3
+                            echo "Intento $COUNTER de 15... Reintentando..."
+                            COUNTER=$((COUNTER + 1))
+                            sleep 5
                         done
-                        echo "❌ La aplicación no responde después de 15 intentos"
-                        echo "Estado de los contenedores:"
-                        docker ps -a
-                        echo "Logs de la aplicación:"
-                        cd docker && docker-compose logs && cd ..
                         exit 1
                     '''
                 }
@@ -109,28 +110,12 @@ pipeline {
     post {
         success {
             echo '🎉 ¡Pipeline completado con éxito!'
-            echo "📦 Imagen creada: ${IMAGE_NAME}:latest"
-            echo "🌐 Aplicación disponible en: http://localhost:8081"
-            echo "📊 Reportes SonarQube: ${SONARQUBE_URL}"
         }
         failure {
-            echo '💥 El pipeline falló en alguna etapa.'
-            script {
-                try {
-                    sh '''
-                        cd docker
-                        docker-compose logs || true
-                        docker-compose down -v || true
-                        cd ..
-                    '''
-                } catch (Exception e) {
-                    echo "No se pudieron limpiar los contenedores"
-                }
+            echo '💥 Falló alguna etapa. Limpiando contenedores...'
+            dir('docker') {
+                sh "docker-compose -p ${DOCKER_PROJECT_NAME} down -v || true"
             }
-        }
-        always {
-            echo '🧹 Limpieza de archivos temporales...'
-            cleanWs()
         }
     }
 }
