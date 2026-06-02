@@ -25,12 +25,18 @@ pipeline {
 
         // 🧪 Etapa 2: Pruebas automatizadas de la tienda (Unitarias y BDD)
         stage('Test') {
-            steps {
-                echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
-                sh 'mvn test'
-            }
-        }
-
+    environment {
+        // 'host.docker.internal' le permite a Jenkins salir de su contenedor y buscar el puerto 3306 expuesto en tu Windows
+        SPRING_DATASOURCE_URL = 'jdbc:mysql://host.docker.internal:3306/ecommerce_db?serverTimezone=America/Lima&useSSL=false&allowPublicKeyRetrieval=true'
+        SPRING_DATASOURCE_USERNAME = 'root'
+        SPRING_DATASOURCE_PASSWORD = 'benja'
+    }
+    steps {
+        echo '🧪 === ETAPA 2: EJECUCIÓN DE PRUEBAS AUTOMATIZADAS ==='
+        // Asegúrate de que tu contenedor de MySQL esté corriendo en Docker Desktop antes de lanzar el Build
+        sh 'mvn test'
+    }
+}
         // 🔨 Etapa 3: Empaquetado del archivo ejecutable (JAR)
         stage('Build') {
             steps {
