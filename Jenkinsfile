@@ -6,11 +6,12 @@ pipeline {
     }
 
     environment {
+        // Alineados perfectamente con tu docker-compose.yml
         DOCKER_PROJECT_NAME = 'sunflowerapp'
-        APP_CONTAINER_NAME = 'sunflower_web_app'
-        DB_CONTAINER_NAME = 'sunflower_db_mysql'
-        SONARQUBE_URL = 'http://sonarqube:9000'
-        SONARQUBE_TOKEN = credentials('Sonarqube')
+        APP_CONTAINER_NAME  = 'ecommerce_app'
+        DB_CONTAINER_NAME   = 'ecommerce_mysql'
+        SONARQUBE_URL       = 'http://sonarqube:9000'
+        SONARQUBE_TOKEN     = credentials('Sonarqube')
     }
 
     stages {
@@ -28,21 +29,25 @@ pipeline {
             }
         }
 
-        // 🗄️ Levantamos MySQL antes de los tests para que Cucumber no falle
         stage('Start Test Database') {
             steps {
                 echo '🗄️ === INICIANDO MYSQL PARA PRUEBAS ==='
                 dir('docker') {
-                    // Levanta solo el contenedor de la base de datos
-                    sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d ${DB_CONTAINER_NAME} || true"
-                    echo '⏳ Esperando 15 segundos a que MySQL acepte conexiones...'
-                    sleep 15
+                    // Usamos "mysql" que es el nombre real del servicio en tu docker-compose.yml
+                    sh "docker-compose -p ${DOCKER_PROJECT_NAME} up -d mysql"
+                    echo '⏳ Esperando 20 segundos a que MySQL inicialice por completo...'
+                    sleep 20
                 }
             }
         }
 
-        // 🧪 Corre todas las pruebas (Unitarias con Mockito + Integración con Cucumber)
         stage('Test') {
+            environment {
+                // Forzamos a Spring Boot a usar el puerto 3307 que expone tu contenedor hacia el host
+                SPRING_DATASOURCE_URL = 'jdbc:mysql://localhost:3307/ecommerce_db?serverTimezone=America/Lima&useSSL=false&allowPublicKeyRetrieval=true'
+                SPRING_DATASOURCE_USERNAME = 'root'
+                SPRING_DATASOURCE_PASSWORD = 'benja'
+            }
             steps {
                 echo '🧪 === EJECUTANDO TODAS LAS PRUEBAS (CUCUMBER Y UNITARIAS) ==='
                 sh 'mvn test'
@@ -70,11 +75,11 @@ pipeline {
             }
         }
 
-        // 🚀 El despliegue de la aplicación web queda al final
         stage('Docker Final Deploy') {
             steps {
                 echo '🚀 === DESPLIEGUE FINAL DE LA APLICACIÓN WEB ==='
                 script {
+                    // Remueve el contenedor viejo usando el nombre real: ecommerce_app
                     sh "docker rm -f ${APP_CONTAINER_NAME} || true"
                 }
                 dir('docker') {
@@ -92,8 +97,8 @@ pipeline {
                         sleep 20
                         COUNTER=1
                         while [ $COUNTER -le 15 ]; do
-                            if curl -f http://host.docker.internal:8081/home > /dev/null 2>&1; then
-                                echo "✅ ¡La app Sunflower está respondiendo con éxito!"
+                            if curl -f http://localhost:8081/home > /dev/null 2>&1; then
+                                echo "✅ ¡La app Sunflower está respondiendo con éxito en el puerto 8081!"
                                 exit 0
                             fi
                             echo "Intento $COUNTER de 15... Reintentando..."
@@ -110,6 +115,7 @@ pipeline {
     post {
         success {
             echo '🎉 ¡Pipeline completado con éxito!'
+            echo '🌐 Tu app está lista en: http://localhost:8081/home'
         }
         failure {
             echo '💥 Falló alguna etapa. Limpiando contenedores...'
